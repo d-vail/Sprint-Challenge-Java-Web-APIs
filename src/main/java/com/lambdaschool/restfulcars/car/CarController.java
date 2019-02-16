@@ -48,24 +48,30 @@ public class CarController {
    * @throws ConstraintViolationException When attempting to create a duplicate record
    */
   @PostMapping("")
-  public Car create(@RequestBody Car car) {
+  public Resource<Car> create(@RequestBody Car car) {
     Car newCar = CAR_REPO.save(car);
     Log msg = new Log("Created a car");
     RBMQ_TEMPLATE.convertAndSend(RestfulcarsApplication.QUEUE, msg.toString());
-    return newCar;
+    return ASSEMBLER.toResource(newCar);
   }
 
   /**
    * Load multiple sets of data from the request body.
    *
-   * @param cars  A list of car data
-   * @return      The list of cars that was successfully saved
+   * @param newCars  A list of car data
+   * @return        The list of cars that was successfully saved
    */
   @PostMapping("/upload")
-  public List<Car> upload(@RequestBody List<Car> cars) {
+  public Resources<Resource<Car>> upload(@RequestBody List<Car> newCars) {
+    List<Resource<Car>> cars = CAR_REPO.saveAll(newCars).stream()
+            .map(ASSEMBLER::toResource)
+            .collect(Collectors.toList());
+
     Log msg = new Log("Data loaded");
     RBMQ_TEMPLATE.convertAndSend(RestfulcarsApplication.QUEUE, msg.toString());
-    return CAR_REPO.saveAll(cars);
+
+    return new Resources<>(cars,
+            linkTo(methodOn(CarController.class).findAll()).withRel("cars"));
   }
 
   /**
