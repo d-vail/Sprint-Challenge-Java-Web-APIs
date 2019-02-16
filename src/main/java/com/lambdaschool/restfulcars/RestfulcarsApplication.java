@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Bean;
 
 @SpringBootApplication
 public class RestfulcarsApplication {
-  public static final String EXCHANGE = "CARS";
+  public static final String EXCHANGE = "Cars";
   public static final String QUEUE = "Log";
 
   public static void main(String[] args) {
