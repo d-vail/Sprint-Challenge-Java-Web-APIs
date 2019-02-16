@@ -8,6 +8,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -149,12 +150,14 @@ public class CarController {
    * Delete car by id.
    *
    * @param id                              The car id
+   * @return                                A response body with No Content status
    * @throws EmptyResultDataAccessException When invalid car id is given
    */
   @DeleteMapping("/delete/{id}")
-  public void deleteById(@PathVariable Long id) {
+  public ResponseEntity<?> deleteById(@PathVariable Long id) {
     CAR_REPO.deleteById(id);
     Log msg = new Log("Car id " + id + " data deleted");
     RBMQ_TEMPLATE.convertAndSend(RestfulcarsApplication.QUEUE, msg.toString());
+    return ResponseEntity.noContent().build();
   }
 }
