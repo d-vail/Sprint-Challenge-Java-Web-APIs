@@ -3,12 +3,18 @@ package com.lambdaschool.restfulcars.car;
 import com.lambdaschool.restfulcars.Log;
 import com.lambdaschool.restfulcars.RestfulcarsApplication;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.hateoas.Resource;
+import org.springframework.hateoas.Resources;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
 
 /**
  * A REST Controller for the Car table
@@ -68,8 +74,16 @@ public class CarController {
    * @return  A list of all existing cars
    */
   @GetMapping()
-  public List<Car> findAll() {
-    return CAR_REPO.findAll();
+  public Resources<Resource<Car>> findAll() {
+    List<Resource<Car>> cars = CAR_REPO.findAll().stream()
+            .map(ASSEMBLER::toResource)
+            .collect(Collectors.toList());
+
+    Log msg = new Log("Search for all cars");
+    RBMQ_TEMPLATE.convertAndSend(RestfulcarsApplication.QUEUE, msg.toString());
+
+    return new Resources<>(cars,
+            linkTo(methodOn(CarController.class).findAll()).withSelfRel());
   }
 
   /**
@@ -80,10 +94,11 @@ public class CarController {
    * @throws CarNotFoundException When invalid car id is given
    */
   @GetMapping("/id/{id}")
-  public Car findById(@PathVariable Long id) {
+  public Resource<Car> findById(@PathVariable Long id) {
+    Car car = CAR_REPO.findById(id).orElseThrow(() -> new CarNotFoundException(id));
     Log msg = new Log("Search for car id " + id);
     RBMQ_TEMPLATE.convertAndSend(RestfulcarsApplication.QUEUE, msg.toString());
-    return CAR_REPO.findById(id).orElseThrow(() -> new CarNotFoundException(id));
+    return ASSEMBLER.toResource(car);
   }
 
   /**
@@ -93,10 +108,16 @@ public class CarController {
    * @return      A list of cars matching the given production year
    */
   @GetMapping("/year/{year}")
-  public List<Car> findByYear(@PathVariable int year) {
+  public Resources<Resource<Car>> findByYear(@PathVariable int year) {
+    List<Resource<Car>> cars = CAR_REPO.findByYear(year).stream()
+            .map(ASSEMBLER::toResource)
+            .collect(Collectors.toList());
+
     Log msg = new Log("Search for cars produced in " + year);
     RBMQ_TEMPLATE.convertAndSend(RestfulcarsApplication.QUEUE, msg.toString());
-    return CAR_REPO.findByYear(year);
+
+    return new Resources<>(cars,
+            linkTo(methodOn(CarController.class).findByYear(year)).withSelfRel());
   }
 
   /**
@@ -106,10 +127,16 @@ public class CarController {
    * @return      A list of cars matching the given car brand.
    */
   @GetMapping("/brand/{brand}")
-  public List<Car> findByBrand(@PathVariable String brand) {
+  public Resources<Resource<Car>> findByBrand(@PathVariable String brand) {
+    List<Resource<Car>> cars = CAR_REPO.findByBrand(brand).stream()
+            .map(ASSEMBLER::toResource)
+            .collect(Collectors.toList());
+
     Log msg = new Log("Search for " + brand);
     RBMQ_TEMPLATE.convertAndSend(RestfulcarsApplication.QUEUE, msg.toString());
-    return CAR_REPO.findByBrand(brand);
+
+    return new Resources<>(cars,
+            linkTo(methodOn(CarController.class).findByBrand(brand)).withSelfRel());
   }
 
   /**
