@@ -2,6 +2,7 @@ package com.lambdaschool.restfulcars.car;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.dao.EmptyResultDataAccessException;
 
 import java.util.List;
 
@@ -23,6 +24,17 @@ public class CarController {
   public CarController(CarRepository carRepo, RabbitTemplate rabbitTemplate) {
     this.CAR_REPO = carRepo;
     this.RBMQ_TEMPLATE = rabbitTemplate;
+  }
+
+  /**
+   * Load multiple sets of data from the request body.
+   *
+   * @param cars  A list of car data
+   * @return      The list of cars that was successfully saved
+   */
+  @PostMapping("/upload")
+  public List<Car> upload(@RequestBody List<Car> cars) {
+    return CAR_REPO.saveAll(cars);
   }
 
   /**
@@ -59,13 +71,13 @@ public class CarController {
   }
 
   /**
-   * Load multiple sets of data from the request body.
+   * Delete car by id.
    *
-   * @param cars  A list of car data
-   * @return      The list of cars that was successfully saved
+   * @param id                              The car id
+   * @throws EmptyResultDataAccessException When invalid car id is given
    */
-  @PostMapping("/upload")
-  public List<Car> upload(@RequestBody List<Car> cars) {
-    return CAR_REPO.saveAll(cars);
+  @DeleteMapping("/delete/{id}")
+  public void deleteById(@PathVariable Long id) {
+    CAR_REPO.deleteById(id);
   }
 }
