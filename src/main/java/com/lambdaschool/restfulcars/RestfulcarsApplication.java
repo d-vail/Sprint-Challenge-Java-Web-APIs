@@ -36,15 +36,15 @@ public class RestfulcarsApplication {
     return BindingBuilder.bind(appQueue()).to(appExchange()).with(QUEUE);
   }
 
-  // Setup JacksonJson2MessageConverter
+  // Setup Jackson2JsonMessageConverter
   @Bean
-  public Jackson2JsonMessageConverter producerJacksonJson2MessageConverter() {
+  public Jackson2JsonMessageConverter producerJackson2JsonMessageConverter() {
     return new Jackson2JsonMessageConverter();
   }
 
   public RabbitTemplate configRabbitTemplate(final ConnectionFactory CF) {
     final RabbitTemplate RT = new RabbitTemplate(CF);
-    RT.setMessageConverter(producerJacksonJson2MessageConverter());
+    RT.setMessageConverter(producerJackson2JsonMessageConverter());
     return RT;
   }
 }
