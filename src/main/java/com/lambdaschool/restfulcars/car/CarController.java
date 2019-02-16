@@ -11,6 +11,8 @@ import org.springframework.hateoas.Resources;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -47,32 +49,37 @@ public class CarController {
    * @param car                           A JSON object with the new car
    * @return                              The car that was created
    * @throws ConstraintViolationException When attempting to create a duplicate record
+   * @throws URISyntaxException           When there is an error in the link creation
    */
   @PostMapping("")
-  public Resource<Car> create(@RequestBody Car car) {
-    Car newCar = CAR_REPO.save(car);
+  public ResponseEntity<?> create(@RequestBody Car car) throws URISyntaxException {
+    Resource<Car> carResource = ASSEMBLER.toResource(CAR_REPO.save(car));
     Log msg = new Log("Created a car");
     RBMQ_TEMPLATE.convertAndSend(RestfulcarsApplication.QUEUE, msg.toString());
-    return ASSEMBLER.toResource(newCar);
+    return ResponseEntity.created(new URI(carResource.getId().expand().getHref()))
+            .body(carResource);
   }
 
   /**
    * Load multiple sets of data from the request body.
    *
-   * @param newCars  A list of car data
-   * @return        The list of cars that was successfully saved
+   * @param newCars                       A list of car data
+   * @return                              The list of cars that was successfully saved
+   * @throws URISyntaxException           When there is an error in the link creation
    */
   @PostMapping("/upload")
-  public Resources<Resource<Car>> upload(@RequestBody List<Car> newCars) {
+  public ResponseEntity<?> upload(@RequestBody List<Car> newCars) throws URISyntaxException {
     List<Resource<Car>> cars = CAR_REPO.saveAll(newCars).stream()
             .map(ASSEMBLER::toResource)
             .collect(Collectors.toList());
 
+    Resources<Resource<Car>> carResources = new Resources<>(cars,
+            linkTo(methodOn(CarController.class).findAll()).withRel("cars"));
+
     Log msg = new Log("Data loaded");
     RBMQ_TEMPLATE.convertAndSend(RestfulcarsApplication.QUEUE, msg.toString());
 
-    return new Resources<>(cars,
-            linkTo(methodOn(CarController.class).findAll()).withRel("cars"));
+    return ResponseEntity.created(new URI("/cars")).body(carResources);
   }
 
   /**
