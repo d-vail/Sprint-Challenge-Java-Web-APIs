@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.hibernate.exception.ConstraintViolationException;
 
 import java.util.List;
 
@@ -28,6 +29,21 @@ public class CarController {
   public CarController(CarRepository carRepo, RabbitTemplate rabbitTemplate) {
     this.CAR_REPO = carRepo;
     this.RBMQ_TEMPLATE = rabbitTemplate;
+  }
+
+  /**
+   * Create a car record.
+   *
+   * @param car                           A JSON object with the new car
+   * @return                              The car that was created
+   * @throws ConstraintViolationException When attempting to create a duplicate record
+   */
+  @PostMapping("")
+  public Car create(@RequestBody Car car) {
+    Car newCar = CAR_REPO.save(car);
+    Log msg = new Log("Created a car");
+    RBMQ_TEMPLATE.convertAndSend(RestfulcarsApplication.QUEUE, msg.toString());
+    return newCar;
   }
 
   /**
