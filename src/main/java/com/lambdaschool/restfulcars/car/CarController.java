@@ -19,6 +19,7 @@ import java.util.List;
 public class CarController {
   private final CarRepository CAR_REPO;
   private final RabbitTemplate RBMQ_TEMPLATE;
+  private final CarResourceAssembler ASSEMBLER;
 
   /**
    * Constructor
@@ -26,9 +27,11 @@ public class CarController {
    * @param carRepo         An instance of the Car database interface for querying
    * @param rabbitTemplate  An instance of a RabbitMQ Template for messages
    */
-  public CarController(CarRepository carRepo, RabbitTemplate rabbitTemplate) {
+  public CarController(CarRepository carRepo, RabbitTemplate rabbitTemplate,
+                       CarResourceAssembler assembler) {
     this.CAR_REPO = carRepo;
     this.RBMQ_TEMPLATE = rabbitTemplate;
+    this.ASSEMBLER = assembler;
   }
 
   /**
@@ -57,6 +60,16 @@ public class CarController {
     Log msg = new Log("Data loaded");
     RBMQ_TEMPLATE.convertAndSend(RestfulcarsApplication.QUEUE, msg.toString());
     return CAR_REPO.saveAll(cars);
+  }
+
+  /**
+   * Find all cars.
+   *
+   * @return  A list of all existing cars
+   */
+  @GetMapping()
+  public List<Car> findAll() {
+    return CAR_REPO.findAll();
   }
 
   /**
