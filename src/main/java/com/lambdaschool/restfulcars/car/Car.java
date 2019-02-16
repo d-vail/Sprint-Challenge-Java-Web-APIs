@@ -2,15 +2,14 @@ package com.lambdaschool.restfulcars.car;
 
 import lombok.Data;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 /**
  * A car model
  */
 @Data
 @Entity
+@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"year", "brand", "model"})})
 public class Car {
   private @Id @GeneratedValue Long id;
   private int year;
