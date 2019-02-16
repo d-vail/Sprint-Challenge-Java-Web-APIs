@@ -40,8 +40,9 @@ public class CarController {
   /**
    * Find car by id.
    *
-   * @param id  The car id
-   * @return    The car record matching the given id
+   * @param id                    The car id
+   * @return                      The car record matching the given id
+   * @throws CarNotFoundException When invalid car id is given
    */
   @GetMapping("/id/{id}")
   public Car findById(@PathVariable Long id) {
