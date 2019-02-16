@@ -1,5 +1,8 @@
 package com.lambdaschool.restfulcars.car;
 
+import com.lambdaschool.restfulcars.Log;
+import com.lambdaschool.restfulcars.RestfulcarsApplication;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -9,6 +12,7 @@ import java.util.List;
 /**
  * A REST Controller for the Car table
  */
+@Slf4j
 @RestController
 @RequestMapping("/cars")
 public class CarController {
@@ -34,6 +38,8 @@ public class CarController {
    */
   @PostMapping("/upload")
   public List<Car> upload(@RequestBody List<Car> cars) {
+    Log msg = new Log("Data loaded");
+    RBMQ_TEMPLATE.convertAndSend(RestfulcarsApplication.QUEUE, msg.toString());
     return CAR_REPO.saveAll(cars);
   }
 
@@ -46,6 +52,8 @@ public class CarController {
    */
   @GetMapping("/id/{id}")
   public Car findById(@PathVariable Long id) {
+    Log msg = new Log("Search for car id " + id);
+    RBMQ_TEMPLATE.convertAndSend(RestfulcarsApplication.QUEUE, msg.toString());
     return CAR_REPO.findById(id).orElseThrow(() -> new CarNotFoundException(id));
   }
 
@@ -57,6 +65,8 @@ public class CarController {
    */
   @GetMapping("/year/{year}")
   public List<Car> findByYear(@PathVariable int year) {
+    Log msg = new Log("Search for cars produced in " + year);
+    RBMQ_TEMPLATE.convertAndSend(RestfulcarsApplication.QUEUE, msg.toString());
     return CAR_REPO.findByYear(year);
   }
 
@@ -68,6 +78,8 @@ public class CarController {
    */
   @GetMapping("/brand/{brand}")
   public List<Car> findByBrand(@PathVariable String brand) {
+    Log msg = new Log("Search for " + brand);
+    RBMQ_TEMPLATE.convertAndSend(RestfulcarsApplication.QUEUE, msg.toString());
     return CAR_REPO.findByBrand(brand);
   }
 
@@ -80,5 +92,7 @@ public class CarController {
   @DeleteMapping("/delete/{id}")
   public void deleteById(@PathVariable Long id) {
     CAR_REPO.deleteById(id);
+    Log msg = new Log("Car id " + id + " data deleted");
+    RBMQ_TEMPLATE.convertAndSend(RestfulcarsApplication.QUEUE, msg.toString());
   }
 }
